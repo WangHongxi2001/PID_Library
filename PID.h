@@ -23,8 +23,8 @@ typedef enum PID_Improvement
     Derivative_On_Measurement = 0x02,   //0000 0010
     Trapezoid_Intergral = 0x04,         //0000 0100
     Proportional_On_Measurement = 0x08, //0000 1000
-    OutputFilter = 0x10,
-    ErrorHandle = 0x80, //1000 0000
+    OutputFilter = 0x10,                //0001 0000
+    ErrorHandle = 0x80,                 //1000 0000
 } PID_Improvement_e;
 
 typedef enum

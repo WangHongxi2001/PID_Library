@@ -90,6 +90,7 @@ static float f_PID_calculate(PID_TypeDef *pid, float measure)
             f_Integral_Limit(pid);
 
         pid->output = pid->pout + pid->iout + pid->dout; //pid calculate
+        //Output Filte
         if (pid->Improve & OutputFilter)
             pid->output = pid->output * 0.7f + pid->last_output * 0.3f;
 
