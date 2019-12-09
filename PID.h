@@ -15,6 +15,8 @@
 
 #include "stdint.h"
 
+#define ABS(x) ((x > 0) ? x : -x)
+
 typedef enum PID_Improvement
 {
     Integral_Limit = 0x01,              //0000 0001
