@@ -15,7 +15,7 @@
 
 #include "stdint.h"
 
-typedef enum PID_Development
+typedef enum PID_Improvement
 {
     Integral_Limit = 0x01,              //0000 0001
     Derivative_On_Measurement = 0x02,   //0000 0010
@@ -23,8 +23,7 @@ typedef enum PID_Development
     Proportional_On_Measurement = 0x08, //0000 1000
     OutputFilter = 0x10,
     ErrorHandle = 0x80, //1000 0000
-}
-PID_Development_e;
+} PID_Improvement_e;
 
 typedef enum
 {
@@ -69,9 +68,9 @@ typedef struct _PID_TypeDef
     uint32_t lasttime;
     uint8_t dtime;
 
-    uint8_t Develop;
+    uint8_t Improve;
     uint8_t Output_WindUp; //pid output windup flag
-    
+
     PID_ErrorHandler_t ERRORHandler;
 
     void (*PID_param_init)(
@@ -83,7 +82,7 @@ typedef struct _PID_TypeDef
         float kp,
         float ki,
         float kd,
-        uint8_t develop);
+        uint8_t improve);
 
     void (*PID_reset)(
         struct _PID_TypeDef *pid,

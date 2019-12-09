@@ -24,7 +24,7 @@ static void f_PID_param_init(
     float ki,
     float kd,
 
-    uint8_t develop)
+    uint8_t improve)
 {
     pid->ControlPeriod = period;
     pid->DeadBand = deadband;
@@ -38,7 +38,7 @@ static void f_PID_param_init(
     pid->kd = kd;
     pid->iout = 0;
 
-    pid->Develop = develop;
+    pid->Improve = improve;
     pid->Output_WindUp = 0;
 
     pid->ERRORHandler.ERRORCount = 0;
@@ -58,7 +58,7 @@ static void f_PID_reset(PID_TypeDef *pid, float kp, float ki, float kd)
 /***************************PID_calculate**********************************/
 static float f_PID_calculate(PID_TypeDef *pid, float measure)
 {
-    if (pid->Develop & ErrorHandle) //ErrorHandle
+    if (pid->Improve & ErrorHandle) //ErrorHandle
     {
         f_PID_ErrorHandle(pid); // last_xxx = xxx
         if (pid->ERRORHandler.ERRORType != PID_ERROR_NONE)
@@ -78,19 +78,19 @@ static float f_PID_calculate(PID_TypeDef *pid, float measure)
         pid->dout = pid->kd * (pid->err - pid->last_err);
 
         //Trapezoid Intergral
-        if (pid->Develop & Trapezoid_Intergral)
+        if (pid->Improve & Trapezoid_Intergral)
             f_Trapezoid_Intergral(pid);
 
         //Derivative On Measurement
-        if (pid->Develop & Derivative_On_Measurement)
+        if (pid->Improve & Derivative_On_Measurement)
             f_Derivative_On_Measurement(pid);
 
         //Integral limit
-        if (pid->Develop & Integral_Limit)
+        if (pid->Improve & Integral_Limit)
             f_Integral_Limit(pid);
 
         pid->output = pid->pout + pid->iout + pid->dout; //pid calculate
-        if (pid->Develop & OutputFilter)
+        if (pid->Improve & OutputFilter)
             pid->output = pid->output * 0.7f + pid->last_output * 0.3f;
 
         //Output limit
@@ -110,7 +110,7 @@ static float f_PID_calculate(PID_TypeDef *pid, float measure)
     return pid->output;
 }
 
-/*****************PID Development Function*********************/
+/*****************PID Improvement Function*********************/
 static void f_Trapezoid_Intergral(PID_TypeDef *pid)
 {
     pid->iout -= pid->ki * pid->err;
@@ -126,7 +126,7 @@ static void f_Integral_Limit(PID_TypeDef *pid)
         if (pid->err * pid->iout > 0) //Integral still increasing
         {
 
-            if (pid->Develop & Trapezoid_Intergral)
+            if (pid->Improve & Trapezoid_Intergral)
                 pid->iout -= pid->ki * ((pid->err + pid->last_err) * pid->ControlPeriod / 2);
             else
                 pid->iout -= pid->ki * pid->err;
