@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file	 pid.h
   * @author  Hongxi Wong
-  * @version V1.0.0
-  * @date    2019/12/9
+  * @version V1.0.2
+  * @date    2019/12/17
   * @brief   
   ******************************************************************************
   * @attention
@@ -24,6 +24,7 @@ typedef enum PID_Improvement
     Trapezoid_Intergral = 0x04,         //0000 0100
     Proportional_On_Measurement = 0x08, //0000 1000
     OutputFilter = 0x10,                //0001 0000
+    ChangingIntegralRate = 0x20,        //0010 0000
     ErrorHandle = 0x80,                 //1000 0000
 } PID_Improvement_e;
 
@@ -41,37 +42,38 @@ typedef struct
 
 typedef struct _PID_TypeDef
 {
-    float target;
-    float lastNoneZeroTarget;
-    float kp;
+    float Target;
+    float LastNoneZeroTarget;
+    float Kp;
     float ki;
     float kd;
 
-    float measure;
-    float last_measure;
-    float err;
-    float last_err;
+    float Measure;
+    float Last_Measure;
+    float Err;
+    float Last_Err;
 
-    float pout;
-    float iout;
-    float dout;
+    float Pout;
+    float Iout;
+    float Dout;
+    float ITerm;
 
-    float output;
-    float last_output;
+    float Output;
+    float Last_Output;
 
     float MaxOut;
     float IntegralLimit;
     float DeadBand;
     float ControlPeriod;
     float MaxErr;
-    float ErrIntegralCal;
+    float ScalarA; //For Changing Integral
+    float ScalarB; //ITerm = Err*((A-abs(err)+B)/A)  when B<|err|<A+B
 
     uint32_t thistime;
     uint32_t lasttime;
     uint8_t dtime;
 
     uint8_t Improve;
-    uint8_t Output_WindUp; //pid output windup flag
 
     PID_ErrorHandler_t ERRORHandler;
 
@@ -81,25 +83,29 @@ typedef struct _PID_TypeDef
         uint16_t integralLimit,
         float deadband,
         uint16_t controlPeriod,
-        float kp,
+        float Kp,
         float ki,
         float kd,
+        float A,
+        float B,
         uint8_t improve);
 
     void (*PID_reset)(
         struct _PID_TypeDef *pid,
-        float kp,
+        float Kp,
         float ki,
         float kd);
 
     float (*PID_Calc)(
         struct _PID_TypeDef *pid,
-        float measure);
+        float Measure);
 } PID_TypeDef;
 
 static void f_Trapezoid_Intergral(PID_TypeDef *pid);
 static void f_Integral_Limit(PID_TypeDef *pid);
 static void f_Derivative_On_Measurement(PID_TypeDef *pid);
+static void f_Changing_Integral_Rate(PID_TypeDef *pid);
+static void f_OutputFilter(PID_TypeDef *pid);
 static void f_PID_ErrorHandle(PID_TypeDef *pid);
 
 void PID_Init(PID_TypeDef *pid);

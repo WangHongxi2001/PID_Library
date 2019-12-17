@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    pid.c
   * @author  Hongxi Wong
-  * @version V1.0.0
-  * @date    2019/12/9
+  * @version V1.0.2
+  * @date    2019/12/17
   * @brief   对每一个pid结构体都要先进行函数的连接，再进行初始化
   ******************************************************************************
   * @attention 
@@ -24,6 +24,9 @@ static void f_PID_param_init(
     float ki,
     float kd,
 
+    float A,
+    float B,
+
     uint8_t improve)
 {
     pid->ControlPeriod = period;
@@ -31,26 +34,25 @@ static void f_PID_param_init(
     pid->IntegralLimit = intergral_limit;
     pid->MaxOut = max_out;
     pid->MaxErr = max_out * 2;
-    pid->target = 0;
+    pid->Target = 0;
 
-    pid->kp = kp;
+    pid->Kp = kp;
     pid->ki = ki;
     pid->kd = kd;
-    pid->iout = 0;
+    pid->ITerm = 0;
 
     pid->Improve = improve;
-    pid->Output_WindUp = 0;
 
     pid->ERRORHandler.ERRORCount = 0;
     pid->ERRORHandler.ERRORType = PID_ERROR_NONE;
 
-    pid->output = 0;
+    pid->Output = 0;
 }
 
 /**************************PID_param_reset*********************************/
-static void f_PID_reset(PID_TypeDef *pid, float kp, float ki, float kd)
+static void f_PID_reset(PID_TypeDef *pid, float Kp, float ki, float kd)
 {
-    pid->kp = kp;
+    pid->Kp = Kp;
     pid->ki = ki;
     pid->kd = kd;
 }
@@ -63,95 +65,111 @@ static float f_PID_calculate(PID_TypeDef *pid, float measure)
         f_PID_ErrorHandle(pid); // last_xxx = xxx
         if (pid->ERRORHandler.ERRORType != PID_ERROR_NONE)
         {
-            pid->output = 0;
+            pid->Output = 0;
             return -1; //Catch ERROR
         }
     }
 
-    pid->measure = measure;
-    pid->err = pid->target - pid->measure;
+    pid->Measure = measure;
+    pid->Err = pid->Target - pid->Measure;
 
-    if (ABS(pid->err) > pid->DeadBand)
+    if (ABS(pid->Err) > pid->DeadBand)
     {
-        pid->pout = pid->kp * pid->err;
-        pid->iout += pid->ki * pid->err;
-        pid->dout = pid->kd * (pid->err - pid->last_err);
+        pid->Pout = pid->Kp * pid->Err;
+        pid->ITerm = pid->ki * pid->Err;
+        pid->Dout = pid->kd * (pid->Err - pid->Last_Err);
 
         //Trapezoid Intergral
         if (pid->Improve & Trapezoid_Intergral)
             f_Trapezoid_Intergral(pid);
-
+        //Integral limit
+        if (pid->Improve & Integral_Limit)
+            f_Integral_Limit(pid);
+        //Changing Integral Rate
+        if (pid->Improve & ChangingIntegralRate)
+            f_Changing_Integral_Rate(pid);
         //Derivative On Measurement
         if (pid->Improve & Derivative_On_Measurement)
             f_Derivative_On_Measurement(pid);
 
-        //Integral limit
-        if (pid->Improve & Integral_Limit)
-            f_Integral_Limit(pid);
+        pid->Iout += pid->ITerm;
 
-        pid->output = pid->pout + pid->iout + pid->dout; //pid calculate
-        //Output Filte
+        pid->Output = pid->Pout + pid->Iout + pid->Dout; //pid calculate
+
+        //Output Filter
         if (pid->Improve & OutputFilter)
-            pid->output = pid->output * 0.7f + pid->last_output * 0.3f;
+            f_OutputFilter(pid);
 
         //Output limit
-        if (pid->output > pid->MaxOut)
+        if (pid->Output > pid->MaxOut)
         {
-            pid->output = pid->MaxOut;
+            pid->Output = pid->MaxOut;
         }
-        if (pid->output < -(pid->MaxOut))
+        if (pid->Output < -(pid->MaxOut))
         {
-            pid->output = -(pid->MaxOut);
+            pid->Output = -(pid->MaxOut);
         }
     }
-    pid->last_measure = pid->measure;
-    pid->last_output = pid->output;
-    pid->last_err = pid->err;
+    pid->Last_Measure = pid->Measure;
+    pid->Last_Output = pid->Output;
+    pid->Last_Err = pid->Err;
 
-    return pid->output;
+    return pid->Output;
 }
 
 /*****************PID Improvement Function*********************/
 static void f_Trapezoid_Intergral(PID_TypeDef *pid)
 {
-    pid->iout -= pid->ki * pid->err;
-    pid->iout += pid->ki * ((pid->err + pid->last_err) * pid->ControlPeriod / 2);
+    pid->ITerm = pid->ki * ((pid->Err + pid->Last_Err) * pid->ControlPeriod / 2);
 }
 
 static void f_Integral_Limit(PID_TypeDef *pid)
 {
-    float temp_Output;
-    temp_Output = pid->pout + pid->iout + pid->dout;
-    if (temp_Output > pid->MaxOut)
+    float temp_Output, temp_Iout;
+    temp_Iout = pid->Iout + pid->ITerm;
+    temp_Output = pid->Pout + pid->Iout + pid->Dout;
+    if (ABS(temp_Output) > pid->MaxOut)
     {
-        if (pid->err * pid->iout > 0) //Integral still increasing
+        if (pid->Err * pid->Iout > 0) //Integral still increasing
         {
-
-            if (pid->Improve & Trapezoid_Intergral)
-                pid->iout -= pid->ki * ((pid->err + pid->last_err) * pid->ControlPeriod / 2);
-            else
-                pid->iout -= pid->ki * pid->err;
+            pid->ITerm = 0;
         }
     }
-    if (pid->iout > pid->IntegralLimit)
-        pid->iout = pid->IntegralLimit;
-    if (pid->iout < -pid->IntegralLimit)
-        pid->iout = -pid->IntegralLimit;
+    if (temp_Iout > pid->IntegralLimit)
+    {
+        pid->ITerm = 0;
+        pid->Iout = pid->IntegralLimit;
+    }
+    if (temp_Iout < -pid->IntegralLimit)
+    {
+        pid->ITerm = 0;
+        pid->Iout = -pid->IntegralLimit;
+    }
+}
+
+static void f_Changing_Integral_Rate(PID_TypeDef *pid)
+{
+    int uio;
 }
 
 static void f_Derivative_On_Measurement(PID_TypeDef *pid)
 {
-    pid->dout = pid->kd * (pid->last_measure - pid->measure);
+    pid->Dout = pid->kd * (pid->Last_Measure - pid->Measure);
+}
+
+static void f_OutputFilter(PID_TypeDef *pid)
+{
+    pid->Output = pid->Output * 0.7f + pid->Last_Output * 0.3f;
 }
 
 /*****************PID ERRORHandle Function*********************/
 static void f_PID_ErrorHandle(PID_TypeDef *pid)
 {
     /*ERROR HANDLE*/
-    if (pid->target < 100)
+    if (pid->Target < 100)
         return;
 
-    if ((ABS(pid->output - pid->measure) / pid->output) > 0.9f)
+    if ((ABS(pid->Output - pid->Measure) / pid->Output) > 0.9f)
     {
         pid->ERRORHandler.ERRORCount++; //Motor blocked counting
     }
@@ -160,7 +178,7 @@ static void f_PID_ErrorHandle(PID_TypeDef *pid)
         pid->ERRORHandler.ERRORCount = 0;
     }
 
-    if (pid->ERRORHandler.ERRORCount > 150) //Motor blocked over 150times generate ERROR
+    if (pid->ERRORHandler.ERRORCount > 150) //Motor blocked over 150times generate ErrOR
     {
         pid->ERRORHandler.ERRORType = Motor_Blocked;
     }
