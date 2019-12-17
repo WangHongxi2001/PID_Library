@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    pid.c
   * @author  Hongxi Wong
-  * @version V1.0.2
+  * @version V1.0.3
   * @date    2019/12/17
   * @brief   对每一个pid结构体都要先进行函数的连接，再进行初始化
   ******************************************************************************
@@ -40,6 +40,9 @@ static void f_PID_param_init(
     pid->ki = ki;
     pid->kd = kd;
     pid->ITerm = 0;
+
+    pid->ScalarA = A;
+    pid->ScalarB = B;
 
     pid->Improve = improve;
 
@@ -82,12 +85,12 @@ static float f_PID_calculate(PID_TypeDef *pid, float measure)
         //Trapezoid Intergral
         if (pid->Improve & Trapezoid_Intergral)
             f_Trapezoid_Intergral(pid);
-        //Integral limit
-        if (pid->Improve & Integral_Limit)
-            f_Integral_Limit(pid);
         //Changing Integral Rate
         if (pid->Improve & ChangingIntegralRate)
             f_Changing_Integral_Rate(pid);
+        //Integral limit
+        if (pid->Improve & Integral_Limit)
+            f_Integral_Limit(pid);
         //Derivative On Measurement
         if (pid->Improve & Derivative_On_Measurement)
             f_Derivative_On_Measurement(pid);
@@ -123,6 +126,16 @@ static void f_Trapezoid_Intergral(PID_TypeDef *pid)
     pid->ITerm = pid->ki * ((pid->Err + pid->Last_Err) * pid->ControlPeriod / 2);
 }
 
+static void f_Changing_Integral_Rate(PID_TypeDef *pid)
+{
+    if (ABS(pid->Err) <= pid->ScalarB)
+        return; //Full integral
+    if (ABS(pid->Err) <= (pid->ScalarA + pid->ScalarB))
+        pid->ITerm *= (pid->ScalarA - ABS(pid->Err) + pid->ScalarB) / pid->ScalarA;
+    else
+        pid->ITerm = 0;
+}
+
 static void f_Integral_Limit(PID_TypeDef *pid)
 {
     float temp_Output, temp_Iout;
@@ -145,11 +158,6 @@ static void f_Integral_Limit(PID_TypeDef *pid)
         pid->ITerm = 0;
         pid->Iout = -pid->IntegralLimit;
     }
-}
-
-static void f_Changing_Integral_Rate(PID_TypeDef *pid)
-{
-    int uio;
 }
 
 static void f_Derivative_On_Measurement(PID_TypeDef *pid)
