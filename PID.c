@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    pid.c
   * @author  Hongxi Wong
-  * @version V1.0.3
-  * @date    2019/12/17
+  * @version V1.0.5
+  * @date    2019/12/19
   * @brief   对每一个pid结构体都要先进行函数的连接，再进行初始化
   ******************************************************************************
   * @attention 
@@ -82,6 +82,9 @@ static float f_PID_calculate(PID_TypeDef *pid, float measure)
         pid->ITerm = pid->ki * pid->Err;
         pid->Dout = pid->kd * (pid->Err - pid->Last_Err);
 
+        //Proportional limit
+        f_Proportion_limit(pid);
+
         //Trapezoid Intergral
         if (pid->Improve & Trapezoid_Intergral)
             f_Trapezoid_Intergral(pid);
@@ -121,6 +124,20 @@ static float f_PID_calculate(PID_TypeDef *pid, float measure)
 }
 
 /*****************PID Improvement Function*********************/
+static void f_Proportion_limit(PID_TypeDef *pid)
+{
+    //Proportion limit is insignificant for control process
+    //but it enable variable chart to look better
+    if (pid->Pout > pid->MaxOut)
+    {
+        pid->Pout = pid->MaxOut;
+    }
+    if (pid->Pout < -(pid->MaxOut))
+    {
+        pid->Pout = -(pid->MaxOut);
+    }
+}
+
 static void f_Trapezoid_Intergral(PID_TypeDef *pid)
 {
     pid->ITerm = pid->ki * ((pid->Err + pid->Last_Err) * pid->ControlPeriod / 2);
@@ -128,12 +145,15 @@ static void f_Trapezoid_Intergral(PID_TypeDef *pid)
 
 static void f_Changing_Integral_Rate(PID_TypeDef *pid)
 {
-    if (ABS(pid->Err) <= pid->ScalarB)
-        return; //Full integral
-    if (ABS(pid->Err) <= (pid->ScalarA + pid->ScalarB))
-        pid->ITerm *= (pid->ScalarA - ABS(pid->Err) + pid->ScalarB) / pid->ScalarA;
-    else
-        pid->ITerm = 0;
+    if (pid->Err * pid->Iout > 0) //Integral still increasing
+    {
+        if (ABS(pid->Err) <= pid->ScalarB)
+            return; //Full integral
+        if (ABS(pid->Err) <= (pid->ScalarA + pid->ScalarB))
+            pid->ITerm *= (pid->ScalarA - ABS(pid->Err) + pid->ScalarB) / pid->ScalarA;
+        else
+            pid->ITerm = 0;
+    }
 }
 
 static void f_Integral_Limit(PID_TypeDef *pid)
@@ -186,7 +206,7 @@ static void f_PID_ErrorHandle(PID_TypeDef *pid)
         pid->ERRORHandler.ERRORCount = 0;
     }
 
-    if (pid->ERRORHandler.ERRORCount > 150) //Motor blocked over 150times generate ErrOR
+    if (pid->ERRORHandler.ERRORCount > 1000) //Motor blocked over 150times generate ErrOR
     {
         pid->ERRORHandler.ERRORType = Motor_Blocked;
     }

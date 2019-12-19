@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file	 pid.h
   * @author  Hongxi Wong
-  * @version V1.0.3
-  * @date    2019/12/17
+  * @version V1.0.5
+  * @date    2019/12/19
   * @brief   
   ******************************************************************************
   * @attention
@@ -101,6 +101,7 @@ typedef struct _PID_TypeDef
         float Measure);
 } PID_TypeDef;
 
+static void f_Proportion_limit(PID_TypeDef *pid);
 static void f_Trapezoid_Intergral(PID_TypeDef *pid);
 static void f_Integral_Limit(PID_TypeDef *pid);
 static void f_Derivative_On_Measurement(PID_TypeDef *pid);
