@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file	 pid.h
   * @author  Hongxi Wong
-  * @version V1.0.5
-  * @date    2019/12/19
+  * @version V1.0.6
+  * @date    2019/12/21
   * @brief   
   ******************************************************************************
   * @attention
@@ -95,10 +95,6 @@ typedef struct _PID_TypeDef
         float Kp,
         float ki,
         float kd);
-
-    float (*PID_Calc)(
-        struct _PID_TypeDef *pid,
-        float Measure);
 } PID_TypeDef;
 
 static void f_Proportion_limit(PID_TypeDef *pid);
@@ -109,6 +105,21 @@ static void f_Changing_Integral_Rate(PID_TypeDef *pid);
 static void f_OutputFilter(PID_TypeDef *pid);
 static void f_PID_ErrorHandle(PID_TypeDef *pid);
 
-void PID_Init(PID_TypeDef *pid);
+void PID_Init(
+    PID_TypeDef *pid,
+    uint16_t max_out,
+    uint16_t intergral_limit,
+    float deadband,
+    uint16_t period,
+
+    float kp,
+    float ki,
+    float kd,
+
+    float A,
+    float B,
+
+    uint8_t improve);
+float PID_Calculate(PID_TypeDef *pid, float measure, float target);
 
 #endif

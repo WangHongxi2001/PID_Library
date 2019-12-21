@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    pid.c
   * @author  Hongxi Wong
-  * @version V1.0.5
-  * @date    2019/12/19
+  * @version V1.0.6
+  * @date    2019/12/21
   * @brief   对每一个pid结构体都要先进行函数的连接，再进行初始化
   ******************************************************************************
   * @attention 
@@ -61,7 +61,7 @@ static void f_PID_reset(PID_TypeDef *pid, float Kp, float ki, float kd)
 }
 
 /***************************PID_calculate**********************************/
-static float f_PID_calculate(PID_TypeDef *pid, float measure)
+float PID_Calculate(PID_TypeDef *pid, float measure, float target)
 {
     if (pid->Improve & ErrorHandle) //ErrorHandle
     {
@@ -74,6 +74,7 @@ static float f_PID_calculate(PID_TypeDef *pid, float measure)
     }
 
     pid->Measure = measure;
+    pid->Target = target;
     pid->Err = pid->Target - pid->Measure;
 
     if (ABS(pid->Err) > pid->DeadBand)
@@ -213,9 +214,25 @@ static void f_PID_ErrorHandle(PID_TypeDef *pid)
 }
 
 /*****************PID Initialize Function*********************/
-void PID_Init(PID_TypeDef *pid)
+void PID_Init(
+    PID_TypeDef *pid,
+    uint16_t max_out,
+    uint16_t intergral_limit,
+    float deadband,
+    uint16_t period,
+
+    float kp,
+    float ki,
+    float kd,
+
+    float A,
+    float B,
+
+    uint8_t improve)
 {
     pid->PID_param_init = f_PID_param_init;
     pid->PID_reset = f_PID_reset;
-    pid->PID_Calc = f_PID_calculate;
+
+    pid->PID_param_init(pid, max_out, intergral_limit, deadband, period,
+                        kp, ki, kd, A, B, improve);
 }
