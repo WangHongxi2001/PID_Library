@@ -69,7 +69,7 @@ float PID_Calculate(PID_TypeDef *pid, float measure, float target)
         if (pid->ERRORHandler.ERRORType != PID_ERROR_NONE)
         {
             pid->Output = 0;
-            return -1; //Catch ERROR
+            return 0; //Catch ERROR
         }
     }
 
