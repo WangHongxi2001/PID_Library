@@ -3,7 +3,7 @@
   * @file    pid.c
   * @author  Hongxi Wong
   * @version V1.0.6
-  * @date    2019/12/21
+  * @date    2019/12/17
   * @brief   对每一个pid结构体都要先进行函数的连接，再进行初始化
   ******************************************************************************
   * @attention 
@@ -18,7 +18,6 @@ static void f_PID_param_init(
     uint16_t max_out,
     uint16_t intergral_limit,
     float deadband,
-    uint16_t period,
 
     float kp,
     float ki,
@@ -29,7 +28,6 @@ static void f_PID_param_init(
 
     uint8_t improve)
 {
-    pid->ControlPeriod = period;
     pid->DeadBand = deadband;
     pid->IntegralLimit = intergral_limit;
     pid->MaxOut = max_out;
@@ -141,7 +139,7 @@ static void f_Proportion_limit(PID_TypeDef *pid)
 
 static void f_Trapezoid_Intergral(PID_TypeDef *pid)
 {
-    pid->ITerm = pid->ki * ((pid->Err + pid->Last_Err) * pid->ControlPeriod / 2);
+    pid->ITerm = pid->ki * ((pid->Err + pid->Last_Err) / 2);
 }
 
 static void f_Changing_Integral_Rate(PID_TypeDef *pid)
@@ -219,7 +217,6 @@ void PID_Init(
     uint16_t max_out,
     uint16_t intergral_limit,
     float deadband,
-    uint16_t period,
 
     float kp,
     float ki,
@@ -233,6 +230,6 @@ void PID_Init(
     pid->PID_param_init = f_PID_param_init;
     pid->PID_reset = f_PID_reset;
 
-    pid->PID_param_init(pid, max_out, intergral_limit, deadband, period,
+    pid->PID_param_init(pid, max_out, intergral_limit, deadband,
                         kp, ki, kd, A, B, improve);
 }

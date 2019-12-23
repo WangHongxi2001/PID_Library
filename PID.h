@@ -3,7 +3,7 @@
   * @file	 pid.h
   * @author  Hongxi Wong
   * @version V1.0.6
-  * @date    2019/12/21
+  * @date    2019/12/17
   * @brief   
   ******************************************************************************
   * @attention
@@ -17,8 +17,9 @@
 
 #define ABS(x) ((x > 0) ? x : -x)
 
-typedef enum PID_Improvement
+typedef enum pid_Improvement_e
 {
+    NONE = 0X00,                        //0000 0000
     Integral_Limit = 0x01,              //0000 0001
     Derivative_On_Measurement = 0x02,   //0000 0010
     Trapezoid_Intergral = 0x04,         //0000 0100
@@ -28,7 +29,7 @@ typedef enum PID_Improvement
     ErrorHandle = 0x80,                 //1000 0000
 } PID_Improvement_e;
 
-typedef enum
+typedef enum errorType_e
 {
     PID_ERROR_NONE = 0x00U,
     Motor_Blocked = 0x01U
@@ -82,7 +83,6 @@ typedef struct _PID_TypeDef
         uint16_t maxOut,
         uint16_t integralLimit,
         float deadband,
-        uint16_t controlPeriod,
         float Kp,
         float ki,
         float kd,
@@ -110,7 +110,6 @@ void PID_Init(
     uint16_t max_out,
     uint16_t intergral_limit,
     float deadband,
-    uint16_t period,
 
     float kp,
     float ki,
