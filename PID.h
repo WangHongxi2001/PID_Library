@@ -46,8 +46,8 @@ typedef struct _PID_TypeDef
     float Target;
     float LastNoneZeroTarget;
     float Kp;
-    float ki;
-    float kd;
+    float Ki;
+    float Kd;
 
     float Measure;
     float Last_Measure;

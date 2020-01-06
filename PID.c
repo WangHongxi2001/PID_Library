@@ -20,8 +20,8 @@ static void f_PID_param_init(
     float deadband,
 
     float kp,
-    float ki,
-    float kd,
+    float Ki,
+    float Kd,
 
     float A,
     float B,
@@ -35,8 +35,8 @@ static void f_PID_param_init(
     pid->Target = 0;
 
     pid->Kp = kp;
-    pid->ki = ki;
-    pid->kd = kd;
+    pid->Ki = Ki;
+    pid->Kd = Kd;
     pid->ITerm = 0;
 
     pid->ScalarA = A;
@@ -51,11 +51,11 @@ static void f_PID_param_init(
 }
 
 /**************************PID_param_reset*********************************/
-static void f_PID_reset(PID_TypeDef *pid, float Kp, float ki, float kd)
+static void f_PID_reset(PID_TypeDef *pid, float Kp, float Ki, float Kd)
 {
     pid->Kp = Kp;
-    pid->ki = ki;
-    pid->kd = kd;
+    pid->Ki = Ki;
+    pid->Kd = Kd;
 }
 
 /***************************PID_calculate**********************************/
@@ -78,8 +78,8 @@ float PID_Calculate(PID_TypeDef *pid, float measure, float target)
     if (ABS(pid->Err) > pid->DeadBand)
     {
         pid->Pout = pid->Kp * pid->Err;
-        pid->ITerm = pid->ki * pid->Err;
-        pid->Dout = pid->kd * (pid->Err - pid->Last_Err);
+        pid->ITerm = pid->Ki * pid->Err;
+        pid->Dout = pid->Kd * (pid->Err - pid->Last_Err);
 
         //Proportional limit
         f_Proportion_limit(pid);
@@ -139,7 +139,7 @@ static void f_Proportion_limit(PID_TypeDef *pid)
 
 static void f_Trapezoid_Intergral(PID_TypeDef *pid)
 {
-    pid->ITerm = pid->ki * ((pid->Err + pid->Last_Err) / 2);
+    pid->ITerm = pid->Ki * ((pid->Err + pid->Last_Err) / 2);
 }
 
 static void f_Changing_Integral_Rate(PID_TypeDef *pid)
@@ -181,7 +181,7 @@ static void f_Integral_Limit(PID_TypeDef *pid)
 
 static void f_Derivative_On_Measurement(PID_TypeDef *pid)
 {
-    pid->Dout = pid->kd * (pid->Last_Measure - pid->Measure);
+    pid->Dout = pid->Kd * (pid->Last_Measure - pid->Measure);
 }
 
 static void f_OutputFilter(PID_TypeDef *pid)
@@ -219,8 +219,8 @@ void PID_Init(
     float deadband,
 
     float kp,
-    float ki,
-    float kd,
+    float Ki,
+    float Kd,
 
     float A,
     float B,
@@ -229,7 +229,6 @@ void PID_Init(
 {
     pid->PID_param_init = f_PID_param_init;
     pid->PID_reset = f_PID_reset;
-
     pid->PID_param_init(pid, max_out, intergral_limit, deadband,
-                        kp, ki, kd, A, B, improve);
+                        kp, Ki, Kd, A, B, improve);
 }
