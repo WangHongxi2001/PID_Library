@@ -56,6 +56,9 @@ static void f_PID_reset(PID_TypeDef *pid, float Kp, float Ki, float Kd)
     pid->Kp = Kp;
     pid->Ki = Ki;
     pid->Kd = Kd;
+
+    if(Ki == 0)
+        pid->Iout = 0;
 }
 
 /***************************PID_calculate**********************************/
