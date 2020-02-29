@@ -12,7 +12,7 @@
   */
 #include "pid.h"
 
-/***************************PID_param_init******************************/
+/***************************PID param initialize******************************/
 static void f_PID_param_init(
     PID_TypeDef *pid,
     uint16_t max_out,
@@ -50,7 +50,7 @@ static void f_PID_param_init(
     pid->Output = 0;
 }
 
-/**************************PID_param_reset*********************************/
+/**************************PID param reset*********************************/
 static void f_PID_reset(PID_TypeDef *pid, float Kp, float Ki, float Kd)
 {
     pid->Kp = Kp;
@@ -61,7 +61,7 @@ static void f_PID_reset(PID_TypeDef *pid, float Kp, float Ki, float Kd)
         pid->Iout = 0;
 }
 
-/***************************PID_calculate**********************************/
+/***************************PID calculate**********************************/
 float PID_Calculate(PID_TypeDef *pid, float measure, float target)
 {
     if (pid->Improve & ErrorHandle) //ErrorHandle
@@ -125,7 +125,7 @@ float PID_Calculate(PID_TypeDef *pid, float measure, float target)
     return pid->Output;
 }
 
-/*****************PID Improvement Function*********************/
+/**************************PID improvement*****************************/
 static void f_Proportion_limit(PID_TypeDef *pid)
 {
     //Proportion limit is insignificant for control process
@@ -214,7 +214,7 @@ static void f_PID_ErrorHandle(PID_TypeDef *pid)
     }
 }
 
-/*****************PID Initialize Function*********************/
+/*****************PID structure initialize*********************/
 void PID_Init(
     PID_TypeDef *pid,
     uint16_t max_out,
@@ -232,6 +232,7 @@ void PID_Init(
 {
     pid->PID_param_init = f_PID_param_init;
     pid->PID_reset = f_PID_reset;
+
     pid->PID_param_init(pid, max_out, intergral_limit, deadband,
                         kp, Ki, Kd, A, B, improve);
 }
