@@ -99,21 +99,14 @@ float PID_Calculate(PID_TypeDef *pid, float measure, float target)
 
         pid->Iout += pid->ITerm;
 
-        pid->Output = pid->Pout + pid->Iout + pid->Dout; //pid calculate
+        pid->Output = pid->Pout + pid->Iout + pid->Dout;
 
         //Output Filter
         if (pid->Improve & OutputFilter)
             f_OutputFilter(pid);
 
         //Output limit
-        if (pid->Output > pid->MaxOut)
-        {
-            pid->Output = pid->MaxOut;
-        }
-        if (pid->Output < -(pid->MaxOut))
-        {
-            pid->Output = -(pid->MaxOut);
-        }
+        f_Output_limit(pid);
 
         //Proportional limit
         f_Proportion_limit(pid);
@@ -126,20 +119,6 @@ float PID_Calculate(PID_TypeDef *pid, float measure, float target)
 }
 
 /*****************PID Improvement Function*********************/
-static void f_Proportion_limit(PID_TypeDef *pid)
-{
-    //Proportion limit is insignificant for control process
-    //but it enable variable chart to look better
-    if (pid->Pout > pid->MaxOut)
-    {
-        pid->Pout = pid->MaxOut;
-    }
-    if (pid->Pout < -(pid->MaxOut))
-    {
-        pid->Pout = -(pid->MaxOut);
-    }
-}
-
 static void f_Trapezoid_Intergral(PID_TypeDef *pid)
 {
     pid->ITerm = pid->Ki * ((pid->Err + pid->Last_Err) / 2);
@@ -147,8 +126,9 @@ static void f_Trapezoid_Intergral(PID_TypeDef *pid)
 
 static void f_Changing_Integral_Rate(PID_TypeDef *pid)
 {
-    if (pid->Err * pid->Iout > 0) //Integral still increasing
+    if (pid->Err * pid->Iout > 0)
     {
+        //Integral still increasing
         if (ABS(pid->Err) <= pid->ScalarB)
             return; //Full integral
         if (ABS(pid->Err) <= (pid->ScalarA + pid->ScalarB))
@@ -165,8 +145,9 @@ static void f_Integral_Limit(PID_TypeDef *pid)
     temp_Output = pid->Pout + pid->Iout + pid->Dout;
     if (ABS(temp_Output) > pid->MaxOut)
     {
-        if (pid->Err * pid->Iout > 0) //Integral still increasing
+        if (pid->Err * pid->Iout > 0)
         {
+            //Integral still increasing
             pid->ITerm = 0;
         }
     }
@@ -189,7 +170,33 @@ static void f_Derivative_On_Measurement(PID_TypeDef *pid)
 
 static void f_OutputFilter(PID_TypeDef *pid)
 {
-    pid->Output = pid->Output * 0.7f + pid->Last_Output * 0.3f;
+    pid->Output = pid->Output * 0.8f + pid->Last_Output * 0.2f;
+}
+
+static void f_Proportion_limit(PID_TypeDef *pid)
+{
+    //Proportion limit is insignificant for control process
+    //but it makes debug chart look better
+    if (pid->Pout > pid->MaxOut)
+    {
+        pid->Pout = pid->MaxOut;
+    }
+    if (pid->Pout < -(pid->MaxOut))
+    {
+        pid->Pout = -(pid->MaxOut);
+    }
+}
+
+static void f_Output_limit(PID_TypeDef *pid)
+{
+    if (pid->Output > pid->MaxOut)
+    {
+        pid->Output = pid->MaxOut;
+    }
+    if (pid->Output < -(pid->MaxOut))
+    {
+        pid->Output = -(pid->MaxOut);
+    }
 }
 
 /*****************PID ERRORHandle Function*********************/
@@ -201,15 +208,17 @@ static void f_PID_ErrorHandle(PID_TypeDef *pid)
 
     if ((ABS(pid->Output - pid->Measure) / pid->Output) > 0.9f)
     {
-        pid->ERRORHandler.ERRORCount++; //Motor blocked counting
+        //Motor blocked counting
+        pid->ERRORHandler.ERRORCount++;
     }
     else
     {
         pid->ERRORHandler.ERRORCount = 0;
     }
 
-    if (pid->ERRORHandler.ERRORCount > 1000) //Motor blocked over 1000times generate ErrOR
+    if (pid->ERRORHandler.ERRORCount > 1000)
     {
+        //Motor blocked over 1000times
         pid->ERRORHandler.ERRORType = Motor_Blocked;
     }
 }
