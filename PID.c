@@ -23,8 +23,8 @@ static void f_PID_param_init(
     float Ki,
     float Kd,
 
-    float A,
-    float B,
+    float Changing_Integral_A,
+    float Changing_Integral_B,
 
     uint8_t improve)
 {
@@ -39,8 +39,8 @@ static void f_PID_param_init(
     pid->Kd = Kd;
     pid->ITerm = 0;
 
-    pid->ScalarA = A;
-    pid->ScalarB = B;
+    pid->ScalarA = Changing_Integral_A;
+    pid->ScalarB = Changing_Integral_B;
 
     pid->Improve = improve;
 
@@ -56,6 +56,9 @@ static void f_PID_reset(PID_TypeDef *pid, float Kp, float Ki, float Kd)
     pid->Kp = Kp;
     pid->Ki = Ki;
     pid->Kd = Kd;
+
+    if (pid->Ki == 0)
+        pid->Iout = 0;
 }
 
 /***************************PID_calculate**********************************/
@@ -80,9 +83,6 @@ float PID_Calculate(PID_TypeDef *pid, float measure, float target)
         pid->Pout = pid->Kp * pid->Err;
         pid->ITerm = pid->Ki * pid->Err;
         pid->Dout = pid->Kd * (pid->Err - pid->Last_Err);
-
-        //Proportional limit
-        f_Proportion_limit(pid);
 
         //Trapezoid Intergral
         if (pid->Improve & Trapezoid_Intergral)
@@ -114,6 +114,9 @@ float PID_Calculate(PID_TypeDef *pid, float measure, float target)
         {
             pid->Output = -(pid->MaxOut);
         }
+
+        //Proportional limit
+        f_Proportion_limit(pid);
     }
     pid->Last_Measure = pid->Measure;
     pid->Last_Output = pid->Output;
@@ -192,8 +195,8 @@ static void f_OutputFilter(PID_TypeDef *pid)
 /*****************PID ERRORHandle Function*********************/
 static void f_PID_ErrorHandle(PID_TypeDef *pid)
 {
-    /*ERROR HANDLE*/
-    if (pid->Target < 100)
+    /*Motor Blocked Handle*/
+    if (pid->Output < pid->MaxOut * 0.01)
         return;
 
     if ((ABS(pid->Output - pid->Measure) / pid->Output) > 0.9f)
