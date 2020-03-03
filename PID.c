@@ -151,6 +151,7 @@ static void f_Integral_Limit(PID_TypeDef *pid)
             pid->ITerm = 0;
         }
     }
+    
     if (temp_Iout > pid->IntegralLimit)
     {
         pid->ITerm = 0;
