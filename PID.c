@@ -151,7 +151,7 @@ static void f_Integral_Limit(PID_TypeDef *pid)
             pid->ITerm = 0;
         }
     }
-    
+
     if (temp_Iout > pid->IntegralLimit)
     {
         pid->ITerm = 0;
@@ -207,7 +207,7 @@ static void f_PID_ErrorHandle(PID_TypeDef *pid)
     if (pid->Output < pid->MaxOut * 0.01)
         return;
 
-    if ((ABS(pid->Output - pid->Measure) / pid->Output) > 0.9f)
+    if ((ABS(pid->Target - pid->Measure) / pid->Target) > 0.9f)
     {
         //Motor blocked counting
         pid->ERRORHandler.ERRORCount++;
