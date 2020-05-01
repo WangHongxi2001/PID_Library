@@ -26,6 +26,7 @@ typedef enum pid_Improvement_e
     Proportional_On_Measurement = 0x08, //0000 1000
     OutputFilter = 0x10,                //0001 0000
     ChangingIntegralRate = 0x20,        //0010 0000
+    DerivativeFilter = 0x40,            //0100 0000
     ErrorHandle = 0x80,                 //1000 0000
 } PID_Improvement_e;
 
@@ -61,6 +62,7 @@ typedef struct _PID_TypeDef
 
     float Output;
     float Last_Output;
+    float Last_Dout;
 
     float MaxOut;
     float IntegralLimit;
@@ -69,6 +71,8 @@ typedef struct _PID_TypeDef
     float MaxErr;
     float ScalarA; //For Changing Integral
     float ScalarB; //ITerm = Err*((A-abs(err)+B)/A)  when B<|err|<A+B
+    float Output_Filtering_Coefficient;
+    float Derivative_Filtering_Coefficient;
 
     uint32_t thistime;
     uint32_t lasttime;
@@ -88,6 +92,8 @@ typedef struct _PID_TypeDef
         float kd,
         float A,
         float B,
+        float output_filtering_coefficient,
+        float derivative_filtering_coefficient,
         uint8_t improve);
 
     void (*PID_reset)(
@@ -97,12 +103,14 @@ typedef struct _PID_TypeDef
         float kd);
 } PID_TypeDef;
 
-static void f_Proportion_limit(PID_TypeDef *pid);
 static void f_Trapezoid_Intergral(PID_TypeDef *pid);
 static void f_Integral_Limit(PID_TypeDef *pid);
 static void f_Derivative_On_Measurement(PID_TypeDef *pid);
 static void f_Changing_Integral_Rate(PID_TypeDef *pid);
-static void f_OutputFilter(PID_TypeDef *pid);
+static void f_Output_Filter(PID_TypeDef *pid);
+static void f_Derivative_Filter(PID_TypeDef *pid);
+static void f_Output_Limit(PID_TypeDef *pid);
+static void f_Proportion_Limit(PID_TypeDef *pid);
 static void f_PID_ErrorHandle(PID_TypeDef *pid);
 
 void PID_Init(
@@ -118,7 +126,10 @@ void PID_Init(
     float A,
     float B,
 
+    float output_filtering_coefficient,
+    float derivative_filtering_coefficient,
+
     uint8_t improve);
 float PID_Calculate(PID_TypeDef *pid, float measure, float target);
-
+		
 #endif
