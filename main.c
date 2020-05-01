@@ -22,7 +22,7 @@ float target = 100.0;
 int main()
 {
     //pid函数连接
-    PID_Init(&PID_Example, 9600, 5000, 3, 1, 5, 0.3, 0.3, 100, 100,0.02, ErrorHandle | Integral_Limit | OutputFilter);
+    PID_Init(&PID_Example, 9600, 5000, 3, 1, 5, 0.3, 0.3, 100, 100,0.02,0.02, ErrorHandle | Integral_Limit | OutputFilter);
 
     //修改kp ki kd
     PID_Example.PID_reset(&PID_Example, 3, 1, 0);
