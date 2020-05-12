@@ -1,4 +1,3 @@
-/**
   ******************************************************************************
   * PID_Library
   * @author  Hongxi Wong <hongxiw0x7d1@foxmail.com>
@@ -10,4 +9,3 @@
   * @attention 
   * For more details, please see https://www.cnblogs.com/HongxiWong/p/12404424.html
   ******************************************************************************
-  */
